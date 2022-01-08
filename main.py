@@ -14,7 +14,7 @@ APY_SECRET = os.getenv('FTX_API_SECRET')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-a', '--account', help='set subaccount, by default it use main account', default=None)
-parser.add_argument('-c', '--coin', help='set coin to lend, default is USDT', default='USDT')
+parser.add_argument('-c', '--coins', help='set coins to lend, split by "," default is USDT', default='USDT')
 parser.add_argument('-r', '--rate', help='set lowest lending hour rate', default=1e-5)  # ~ 8.76 % / year
 
 
@@ -34,22 +34,23 @@ if __name__ == '__main__':
 
     # get balance
     balances = client.fetch_balance()
-    coin = args.coin
-    for item in balances['info']['result']:
-        if item['coin'] == coin:
-            balance = item['total']
-            break
-    else:
-        print(balances)
-        raise Exception(f'result not found for {coin}')
+    coins = args.coins.split(",")
+    for coin in coins:
+        for item in balances['info']['result']:
+            if item['coin'] == coin:
+                balance = item['total']
+                break
+        else:
+            print(balances)
+            raise Exception(f'result not found for {coin}')
 
-    # renew lending
-    body = {
-        "coin": coin,
-        "size": balance,
-        "rate": args.rate
-    }
-    res = client.private_post_spot_margin_offers(body)
-    if not res['success']:
-        print(res.json())
-        raise Exception('lending fail')
+        # renew lending
+        body = {
+            "coin": coin,
+            "size": balance,
+            "rate": args.rate
+        }
+        res = client.private_post_spot_margin_offers(body)
+        if not res['success']:
+            print(res.json())
+            raise Exception('lending fail')
